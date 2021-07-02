@@ -219,7 +219,6 @@ public class ImageObjectDetectFragment extends BaseFragment {
 
                 source.draw(canvas);
 
-
             }
             String benchResult = "object count: " + objectCount + " " + Helper.getBenchResult();
             TextView result_view = (TextView)$(R.id.result);
