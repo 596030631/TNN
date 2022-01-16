@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
@@ -24,6 +25,7 @@ import com.tencent.tnn.demo.common.component.DrawView;
 import com.tencent.tnn.demo.common.fragment.BaseFragment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class ImageObjectDetectFragment extends BaseFragment {
@@ -66,10 +68,9 @@ public class ImageObjectDetectFragment extends BaseFragment {
                 "yolov5s-permute.tnnproto",
         };
 
-        for (int i = 0; i < modelPathsDetector.length; i++) {
-            String modelFilePath = modelPathsDetector[i];
-            String interModelFilePath = targetDir + "/" + modelFilePath ;
-            FileUtils.copyAsset(getActivity().getAssets(), "yolov5/"+modelFilePath, interModelFilePath);
+        for (String modelFilePath : modelPathsDetector) {
+            String interModelFilePath = targetDir + "/" + modelFilePath;
+            FileUtils.copyAsset(getActivity().getAssets(), "yolov5/" + modelFilePath, interModelFilePath);
         }
         return targetDir;
     }
@@ -118,21 +119,11 @@ public class ImageObjectDetectFragment extends BaseFragment {
         $$(R.id.back_rl);
         $$(R.id.gpu_switch);
         mGPUSwitch = $(R.id.gpu_switch);
-        mGPUSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                onSwichGPU(b);
-            }
-        });
+        mGPUSwitch.setOnCheckedChangeListener((compoundButton, b) -> onSwichGPU(b));
 
         $$(R.id.npu_switch);
         mHuaweiNPUswitch = $(R.id.npu_switch);
-        mHuaweiNPUswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                onSwichNPU(b);
-            }
-        });
+        mHuaweiNPUswitch.setOnCheckedChangeListener((compoundButton, b) -> onSwichNPU(b));
 
         HuaweiNpuTextView = $(R.id.npu_text);
 
@@ -142,12 +133,7 @@ public class ImageObjectDetectFragment extends BaseFragment {
         }
         mDrawView = (DrawView) $(R.id.drawView);
         mRunButton = $(R.id.run_button);
-        mRunButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startDetect();
-            }
-        });
+        mRunButton.setOnClickListener(view -> new Thread(this::startDetect).start());
 
         Bitmap originBitmap = FileUtils.readBitmapFromFile(getActivity().getAssets(), IMAGE);
         ImageView source = (ImageView)$(R.id.origin);
@@ -186,8 +172,10 @@ public class ImageObjectDetectFragment extends BaseFragment {
         int result = mObjectDetector.init(modelPath, NET_W_INPUT, NET_H_INPUT, 0.7f, 0.3f, -1, device);
         if(result == 0) {
             Log.d(TAG, "detect from image");
+            long start = SystemClock.elapsedRealtime();
             ObjectInfo[] objectInfoList = mObjectDetector.detectFromImage(originBitmap, originBitmap.getWidth(), originBitmap.getHeight());
-            Log.d(TAG, "detect from image result " + objectInfoList);
+            Log.w(TAG, String.format("识别耗时:%d", SystemClock.elapsedRealtime() - start));
+            Log.d(TAG, "detect from image result " + Arrays.toString(objectInfoList));
             int objectCount = 0;
             if (objectInfoList != null) {
                 objectCount = objectInfoList.length;
@@ -200,10 +188,9 @@ public class ImageObjectDetectFragment extends BaseFragment {
                 mPaint.setStyle(Paint.Style.STROKE);
                 Bitmap scaleBitmap2 = originBitmap.copy(Bitmap.Config.ARGB_8888, true);
                 Canvas canvas = new Canvas(scaleBitmap2);
-                ArrayList<Rect> rects = new ArrayList<Rect>();
-                for (int i=0; i<objectInfoList.length; i++)
-                {
-                    rects.add(new Rect((int)(objectInfoList[i].x1), (int)(objectInfoList[i].y1), (int)(objectInfoList[i].x2), (int)(objectInfoList[i].y2)));
+                ArrayList<Rect> rects = new ArrayList<>();
+                for (ObjectInfo objectInfo : objectInfoList) {
+                    rects.add(new Rect((int) (objectInfo.x1), (int) (objectInfo.y1), (int) (objectInfo.x2), (int) (objectInfo.y2)));
                 }
                 for (int i=0; i<rects.size(); i++) {
                     Log.d(TAG, "rect " + rects.get(i));
@@ -222,7 +209,7 @@ public class ImageObjectDetectFragment extends BaseFragment {
             }
             String benchResult = "object count: " + objectCount + " " + Helper.getBenchResult();
             TextView result_view = (TextView)$(R.id.result);
-            result_view.setText(benchResult);
+            result_view.post(() -> result_view.setText(benchResult));
         } else {
             Log.e(TAG, "failed to init model " + result);
         }
@@ -269,15 +256,12 @@ public class ImageObjectDetectFragment extends BaseFragment {
     private void getFocus() {
         getView().setFocusableInTouchMode(true);
         getView().requestFocus();
-        getView().setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-            if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
-                clickBack();
-                return true;
-            }
-            return false;
-            }
+        getView().setOnKeyListener((v, keyCode, event) -> {
+        if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
+            clickBack();
+            return true;
+        }
+        return false;
         });
     }
 

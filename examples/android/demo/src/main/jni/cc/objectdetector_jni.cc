@@ -111,11 +111,11 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromStream)(JNIEnv *env
     std::vector<TNN_NS::ObjectInfo> objectInfoList;
     // Convert yuv to rgb
     LOGI("detect from stream %d x %d r %d", width, height, rotate);
-    unsigned char *yuvData = new unsigned char[height * width * 3 / 2];
+    auto *yuvData = new unsigned char[height * width * 3 / 2];
     jbyte *yuvDataRef = env->GetByteArrayElements(yuv420sp, 0);
     int ret = kannarotate_yuv420sp((const unsigned char*)yuvDataRef, (int)width, (int)height, (unsigned char*)yuvData, (int)rotate);
     env->ReleaseByteArrayElements(yuv420sp, yuvDataRef, 0);
-    unsigned char *rgbaData = new unsigned char[height * width * 4];
+    auto *rgbaData = new unsigned char[height * width * 4];
     yuv420sp_to_rgba_fast_asm((const unsigned char*)yuvData, height, width, (unsigned char*)rgbaData);
     TNN_NS::DeviceType dt = TNN_NS::DEVICE_ARM;
 
@@ -128,7 +128,7 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromStream)(JNIEnv *env
     auto resize_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::N8UC4, resize_dims);
 
     TNN_NS::ResizeParam param;
-    TNN_NS::MatUtils::Resize(*input_mat, *resize_mat, param, NULL);
+    TNN_NS::MatUtils::Resize(*input_mat, *resize_mat, param, nullptr);
 
     std::shared_ptr<TNN_NS::TNNSDKInput> input = std::make_shared<TNN_NS::TNNSDKInput>(resize_mat);
     std::shared_ptr<TNN_NS::TNNSDKOutput> output = std::make_shared<TNN_NS::TNNSDKOutput>();
@@ -140,12 +140,12 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromStream)(JNIEnv *env
     delete [] rgbaData;
     if (status != TNN_NS::TNN_OK) {
         LOGE("failed to detect %d", (int)status);
-        return 0;
+        return nullptr;
     }
 
-    LOGI("object info list size %d", objectInfoList.size());
+    LOGI("object info list size %lu", objectInfoList.size());
     // TODO: copy object info list
-    if (objectInfoList.size() > 0) {
+    if (!objectInfoList.empty()) {
         objectInfoArray = env->NewObjectArray(objectInfoList.size(), clsObjectInfo, NULL);
         for (int i = 0; i < objectInfoList.size(); i++) {
             jobject objObjectInfo = env->NewObject(clsObjectInfo, midconstructorObjectInfo);
@@ -164,7 +164,7 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromStream)(JNIEnv *env
         }
         return objectInfoArray;
     } else {
-        return 0;
+        return nullptr;
     }
 
 }
@@ -177,15 +177,15 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromImage)(JNIEnv *env,
     void*              sourcePixelscolor;
 
     if (AndroidBitmap_getInfo(env, imageSource, &sourceInfocolor) < 0) {
-        return 0;
+        return nullptr;
     }
 
     if (sourceInfocolor.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        return 0;
+        return nullptr;
     }
 
     if ( AndroidBitmap_lockPixels(env, imageSource, &sourcePixelscolor) < 0) {
-        return 0;
+        return nullptr;
     }
     TNN_NS::BenchOption bench_option;
     bench_option.forward_count = 20;
@@ -198,7 +198,7 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromImage)(JNIEnv *env,
     auto resize_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::N8UC4, target_dims);
 
     TNN_NS::ResizeParam param;
-    TNN_NS::MatUtils::Resize(*input_mat, *resize_mat, param, NULL);
+    TNN_NS::MatUtils::Resize(*input_mat, *resize_mat, param, nullptr);
 
     float scale_h = height / 448.0f;
     float scale_w = width / 640.0f;
@@ -218,7 +218,7 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromImage)(JNIEnv *env,
 
     if (status != TNN_NS::TNN_OK) {
         LOGE("failed to detect %d", (int)status);
-        return 0;
+        return nullptr;
     }
     LOGI("bench result: %s", asyncRefDetector->GetBenchResult().Description().c_str());
     char temp[128] = "";
@@ -232,10 +232,10 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromImage)(JNIEnv *env,
     std::string computeUnitTips(temp);
     std::string resultTips = std::string(computeUnitTips + asyncRefDetector->GetBenchResult().Description());
     setBenchResult(resultTips);
-    LOGI("object info list size %d", objectInfoList.size());
+    LOGI("object info list size %lu", objectInfoList.size());
     // TODO: copy object info list
-    if (objectInfoList.size() > 0) {
-        objectInfoArray = env->NewObjectArray(objectInfoList.size(), clsObjectInfo, NULL);
+    if (!objectInfoList.empty()) {
+        objectInfoArray = env->NewObjectArray(objectInfoList.size(), clsObjectInfo, nullptr);
         for (int i = 0; i < objectInfoList.size(); i++) {
             jobject objObjectInfo = env->NewObject(clsObjectInfo, midconstructorObjectInfo);
             int landmarkNum = objectInfoList[i].key_points.size();
@@ -251,8 +251,8 @@ JNIEXPORT JNICALL jobjectArray TNN_OBJECT_DETECTOR(detectFromImage)(JNIEnv *env,
         }
         return objectInfoArray;
     } else {
-        return 0;
+        return nullptr;
     }
 
-    return 0;
+    return nullptr;
 }
