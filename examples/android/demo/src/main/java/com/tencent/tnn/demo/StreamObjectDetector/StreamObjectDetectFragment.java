@@ -81,8 +81,8 @@ public class StreamObjectDetectFragment extends BaseFragment {
 
         //copy detect model to sdcard
         String[] modelPathsDetector = {
-                "yolov5s.tnnmodel",
-                "yolov5s-permute.tnnproto",
+                "yolov5n.tnnmodel",
+                "yolov5n.tnnproto",
         };
 
         for (int i = 0; i < modelPathsDetector.length; i++) {

@@ -15,6 +15,7 @@ public class ImageObjectDetectActivity extends DemoBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.w(TAG, "YOLOV5S");
 
         setContentView(R.layout.base_activity_layout);
 

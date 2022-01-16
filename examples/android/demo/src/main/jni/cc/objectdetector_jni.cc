@@ -33,7 +33,7 @@ JNIEXPORT JNICALL jint TNN_OBJECT_DETECTOR(init)(JNIEnv *env, jobject thiz, jstr
     std::string modelPathStr(jstring2string(env, modelPath));
     protoContent = fdLoadFile(modelPathStr + "/yolov5s-permute.tnnproto");
     modelContent = fdLoadFile(modelPathStr + "/yolov5s.tnnmodel");
-    LOGI("proto content size %d model content size %d", protoContent.length(), modelContent.length());
+    LOGI("proto content size %lu model content size %lu", protoContent.length(), modelContent.length());
     gComputeUnitType = computUnitType;
 
     TNN_NS::Status status = TNN_NS::TNN_OK;

@@ -31,7 +31,8 @@ public class ImageObjectDetectFragment extends BaseFragment {
     private final static String TAG = ImageObjectDetectFragment.class.getSimpleName();
     private ObjectDetector mObjectDetector = new ObjectDetector();
 
-    private static final String IMAGE = "dog_cropped.jpg";
+//    private static final String IMAGE = "dog_cropped.jpg";
+    private static final String IMAGE = "gatorade.jpg";
     private static final int NET_H_INPUT = 448;
     private static final int NET_W_INPUT = 640;
     private Paint mPaint = new Paint();
